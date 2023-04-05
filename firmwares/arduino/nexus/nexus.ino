@@ -50,14 +50,22 @@ void setup()
 char buffer[BLOCKSIZE + 1];
 uint8_t serptr = 0;
 bool write = false;
-void execute_serial_cmd()
+
+uint8_t serial_chksum()
 {
-  uint8_t chksum = 0;
-  for (uint8_t i = 0; i <= BLOCKSIZE; i++) {
+  uint8_t chksum;
+  for (uint8_t i = 0; i < BLOCKSIZE; i++) {
     chksum += buffer[i];
   }
-  if (chksum) {
+  return chksum;
+}
+
+void execute_serial_cmd()
+{
+  uint8_t chksum = serial_chksum();
+  if ((uint8_t)(chksum + buffer[BLOCKSIZE])) {
     buffer[0] = RES_RP;
+    buffer[BLOCKSIZE] = -serial_chksum();
     return;
   }
 
@@ -70,6 +78,8 @@ void execute_serial_cmd()
       buffer[1] = 0;
       break;
   }
+
+  buffer[BLOCKSIZE] = -serial_chksum();
 }
 
 void loop()

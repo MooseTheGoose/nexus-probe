@@ -29,10 +29,10 @@ def msgxchg(code,msg):
     print(msg)
     for rpcnt in range(16):
         req = ser.write(msg)
-        print(req)
         resp = ser.read(BLOCKSIZE)
         chksum = ser.read(1)[0]
-        if chksum == msgchksum(resp): 
+        print(resp, chksum)
+        if chksum != msgchksum(resp): 
             rpmsg = bytes([RES_RP]) + bytes(BLOCKSIZE - 1)
             ser.write(rpmsg)
             ser.write(msgchksum(rpmsg).to_bytes(1, 'little'))
