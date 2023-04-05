@@ -49,7 +49,7 @@ if __name__ == '__main__':
         print(f'Usage: {sys.argv[0]} <fname>')
         sys.exit(1)
     fname = sys.argv[1]
-    ser = serial.Serial(fname)
+    ser = serial.Serial(fname, baudrate=115200)
     print("Waiting for Arduino to reset...")
     time.sleep(2)
     sys.exit(main(ser))

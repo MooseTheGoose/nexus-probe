@@ -43,7 +43,7 @@ void setup()
   pinMode(TDIPIN, OUTPUT);
   pinMode(TDOPIN, INPUT);
   pinMode(TNRDYPIN, INPUT);
-  Serial.begin(9600);
+  Serial.begin(115200);
   JTAGReset();
 }
 
