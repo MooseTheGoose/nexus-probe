@@ -9,7 +9,15 @@ RES_GD = 0x47
 RES_NG = 0x4e
 RES_RP = 0x52
 
-REQ_PING = 0x50
+CMD_PING = 0x50
+CMD_CFG = 0x43
+CMD_JR_RW = 0x57
+CMD_RESET = 0x54
+
+CAPTURE_IR_FLAG = 0x80
+WAIT_READY_FLAG = 0x40
+TO_IDLE_FLAG = 0x20
+JTAG_REG_MAX_LEN = 96
 
 def ser_debugread(ser, nbytes):
     data = b''
@@ -19,13 +27,18 @@ def ser_debugread(ser, nbytes):
         data += lonebyte
     return data
 
+def itob(i):
+    return i.to_bytes(1, 'little')
+
 def msgchksum(msg):
     return -sum(msg) & 0xff
 
-def msgxchg(code,msg):
+def msgxchg(ser,code,msg):
+    if len(msg) >= BLOCKSIZE:
+        return None
     msg = code.to_bytes(1,'little') + msg[:BLOCKSIZE-1]
     msg += bytes(BLOCKSIZE - len(msg))
-    msg += msgchksum(msg).to_bytes(1, 'little')
+    msg += itob(msgchksum(msg))
     print(msg)
     for rpcnt in range(16):
         req = ser.write(msg)
@@ -35,13 +48,20 @@ def msgxchg(code,msg):
         if chksum != msgchksum(resp): 
             rpmsg = bytes([RES_RP]) + bytes(BLOCKSIZE - 1)
             ser.write(rpmsg)
-            ser.write(msgchksum(rpmsg).to_bytes(1, 'little'))
+            ser.write(itob(msgchksum(rpmsg)))
         elif resp[0] != RES_RP:
             return resp[0],resp[1:]
     return None
 
+def jtag_reg_rw(ser, reg, rlen, flags):
+    if rlen > JTAG_REG_MAX_LEN:
+        return None
+    regdata = reg.to_bytes((rlen + 7) // 8, 'little')
+    msgxchg(ser, CMD_JR_RW, itob(rlen) + itob(flags) + regdata)
+
 def main(ser):
-    print(msgxchg(REQ_PING, B''))
+    # Read IDCODE
+    print(jtag_reg_rw(ser, 0, 32, TO_IDLE_FLAG))
     return 0
 
 if __name__ == '__main__':
